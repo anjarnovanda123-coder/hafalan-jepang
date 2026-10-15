@@ -1,4 +1,3 @@
-
 import streamlit as st
 import json
 import random
@@ -14,12 +13,25 @@ st.set_page_config(
 )
 
 # =========================================================
-#  KONFIGURASI FILE
+#  KONFIGURASI FILE (AMAN UNTUK STREAMLIT CLOUD)
 # =========================================================
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 FOLDER_DATA = os.path.join(SCRIPT_DIR, "kosakata_data")
 
-os.makedirs(FOLDER_DATA, exist_ok=True)
+# Buat folder dengan aman — abaikan semua error filesystem
+try:
+    if not os.path.exists(FOLDER_DATA):
+        os.makedirs(FOLDER_DATA, exist_ok=True)
+except (FileExistsError, PermissionError, OSError):
+    pass
+
+# Fallback: kalau folder tidak bisa dibuat/diakses, pakai folder sementara
+if not os.path.isdir(FOLDER_DATA):
+    FOLDER_DATA = "/tmp/kosakata_data"
+    try:
+        os.makedirs(FOLDER_DATA, exist_ok=True)
+    except Exception:
+        pass
 
 
 # =========================================================
@@ -27,10 +39,16 @@ os.makedirs(FOLDER_DATA, exist_ok=True)
 # =========================================================
 def daftar_file_tersimpan():
     """Mengembalikan daftar file JSON di folder data."""
-    if not os.path.exists(FOLDER_DATA):
+    try:
+        if not os.path.isdir(FOLDER_DATA):
+            return []
+        files = [
+            f for f in os.listdir(FOLDER_DATA)
+            if f.endswith(".json") and f != "_aktif.json"
+        ]
+        return sorted(files)
+    except Exception:
         return []
-    files = [f for f in os.listdir(FOLDER_DATA) if f.endswith(".json") and f != "_aktif.json"]
-    return sorted(files)
 
 
 def path_file(nama):
@@ -47,7 +65,6 @@ def muat_data(nama_file):
             data = json.load(f)
         if not isinstance(data, list):
             return []
-        # Bersihkan data
         data_bersih = []
         for item in data:
             if isinstance(item, dict) and "indo" in item and "jepang" in item:
@@ -80,14 +97,12 @@ def kunci_unik(kata):
 #  INISIALISASI SESSION STATE
 # =========================================================
 def init_session_state():
-    """Inisialisasi semua state yang dibutuhkan."""
     defaults = {
-        "halaman": "menu",              # menu | kuis | pemahaman
+        "halaman": "menu",
         "file_aktif": None,
         "data_kosakata": [],
         "mode_kuis": "jepang_ke_indo",
         "target_benar": 2,
-        # State sesi kuis
         "sesi_aktif": False,
         "sesi_kata_unik": [],
         "sesi_progress": {},
@@ -100,9 +115,9 @@ def init_session_state():
         "jawaban_dipilih": None,
         "pesan_feedback": None,
         "tipe_feedback": None,
-        # Range
         "range_mulai": 1,
         "range_selesai": 10,
+        "data_pemahaman": [],
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -113,75 +128,71 @@ init_session_state()
 
 
 # =========================================================
-#  SIDEBAR: MANAJEMEN FILE & KATA
+#  SIDEBAR
 # =========================================================
 def render_sidebar():
     with st.sidebar:
         st.header("📁 Manajemen File")
 
-        # Daftar file
         files = daftar_file_tersimpan()
 
+        # Kalau tidak ada file sama sekali, coba buat default.json
         if not files:
-            st.warning("Belum ada file. Buat file baru dulu.")
-            nama_baru = st.text_input("Nama file baru:", value="default")
-            if st.button("➕ Buat File", use_container_width=True):
-                nama = nama_baru.strip().replace(" ", "_")
-                if not nama.lower().endswith(".json"):
-                    nama += ".json"
-                if os.path.exists(path_file(nama)):
-                    st.error(f"File '{nama}' sudah ada!")
-                else:
-                    simpan_data(nama, [])
-                    st.session_state.file_aktif = nama
-                    st.session_state.data_kosakata = []
-                    st.success(f"File '{nama}' dibuat!")
-                    st.rerun()
-        else:
-            # Pilih file aktif
-            if st.session_state.file_aktif not in files:
-                st.session_state.file_aktif = files[0]
+            try:
+                simpan_data("default.json", [])
+                files = ["default.json"]
+            except Exception:
+                st.warning("Tidak bisa membuat file data.")
+                return
 
-            pilihan = st.selectbox(
-                "Pilih file aktif:",
-                files,
-                index=files.index(st.session_state.file_aktif)
-            )
+        # Pastikan file_aktif valid
+        if st.session_state.file_aktif not in files:
+            st.session_state.file_aktif = files[0]
+            st.session_state.data_kosakata = muat_data(files[0])
 
-            if pilihan != st.session_state.file_aktif:
-                st.session_state.file_aktif = pilihan
-                st.session_state.data_kosakata = muat_data(pilihan)
-                st.rerun()
+        pilihan = st.selectbox(
+            "Pilih file aktif:",
+            files,
+            index=files.index(st.session_state.file_aktif) if st.session_state.file_aktif in files else 0
+        )
 
-            # Tombol aksi file
-            col1, col2 = st.columns(2)
-            with col1:
-                nama_baru = st.text_input("File baru:", value="", key="file_baru_input")
-                if st.button("➕ Buat", use_container_width=True):
-                    if nama_baru.strip():
-                        nama = nama_baru.strip().replace(" ", "_")
-                        if not nama.lower().endswith(".json"):
-                            nama += ".json"
-                        if os.path.exists(path_file(nama)):
-                            st.error("File sudah ada!")
-                        else:
-                            simpan_data(nama, [])
-                            st.session_state.file_aktif = nama
-                            st.session_state.data_kosakata = []
-                            st.rerun()
+        if pilihan != st.session_state.file_aktif:
+            st.session_state.file_aktif = pilihan
+            st.session_state.data_kosakata = muat_data(pilihan)
+            st.rerun()
 
-            with col2:
-                st.write("")
-                st.write("")
-                if st.button("🗑️ Hapus File", use_container_width=True):
-                    if len(files) <= 1:
-                        st.error("Harus ada minimal 1 file!")
+        # Tombol aksi file
+        col1, col2 = st.columns(2)
+        with col1:
+            nama_baru = st.text_input("File baru:", value="", key="file_baru_input")
+            if st.button("➕ Buat", use_container_width=True):
+                if nama_baru.strip():
+                    nama = nama_baru.strip().replace(" ", "_")
+                    if not nama.lower().endswith(".json"):
+                        nama += ".json"
+                    if os.path.exists(path_file(nama)):
+                        st.error("File sudah ada!")
                     else:
+                        simpan_data(nama, [])
+                        st.session_state.file_aktif = nama
+                        st.session_state.data_kosakata = []
+                        st.rerun()
+
+        with col2:
+            st.write("")
+            st.write("")
+            if st.button("🗑️ Hapus File", use_container_width=True):
+                if len(files) <= 1:
+                    st.error("Harus ada minimal 1 file!")
+                else:
+                    try:
                         os.remove(path_file(st.session_state.file_aktif))
                         sisa = [f for f in files if f != st.session_state.file_aktif]
                         st.session_state.file_aktif = sisa[0]
                         st.session_state.data_kosakata = muat_data(sisa[0])
                         st.rerun()
+                    except Exception as e:
+                        st.error(f"Gagal hapus: {e}")
 
         st.divider()
 
@@ -198,11 +209,12 @@ def render_sidebar():
                     st.error("Indonesia dan Romaji wajib diisi!")
                 else:
                     data = st.session_state.data_kosakata
-                    baru = {"indo": indo.strip(), "jepang": jepang.strip(), "huruf": huruf.strip()}
-                    # Cek duplikat
-                    duplikat = any(
-                        kunci_unik(d) == kunci_unik(baru) for d in data
-                    )
+                    baru = {
+                        "indo": indo.strip(),
+                        "jepang": jepang.strip(),
+                        "huruf": huruf.strip()
+                    }
+                    duplikat = any(kunci_unik(d) == kunci_unik(baru) for d in data)
                     if duplikat:
                         st.warning("Kosakata ini sudah ada!")
                     else:
@@ -212,8 +224,6 @@ def render_sidebar():
                         st.rerun()
 
         st.divider()
-
-        # Info file aktif
         st.caption(f"📄 File aktif: **{st.session_state.file_aktif}**")
         st.caption(f"📚 Total: **{len(st.session_state.data_kosakata)}** kata")
 
@@ -231,10 +241,8 @@ def render_menu():
         st.info("📭 Belum ada kosakata di file ini. Tambahkan kata dulu di sidebar.")
         return
 
-    # Tabel kosakata
     st.subheader(f"📋 Kosakata di File Aktif ({len(data)} kata)")
 
-    # Tampilkan dalam tabel
     tabel_data = []
     for i, kos in enumerate(data, 1):
         tabel_data.append({
@@ -246,15 +254,12 @@ def render_menu():
 
     st.dataframe(tabel_data, use_container_width=True, height=300)
 
-    # Tombol hapus semua
     if st.button("🧹 Hapus Semua Kosakata", type="secondary"):
         st.session_state.data_kosakata = []
         simpan_data(st.session_state.file_aktif, [])
         st.rerun()
 
     st.divider()
-
-    # Mulai kuis
     st.subheader("🎯 Mulai Kuis / Pemahaman")
 
     col1, col2 = st.columns(2)
@@ -271,8 +276,9 @@ def render_menu():
         return
 
     st.caption(
-        f"🎯 Target sesi: setiap kata harus benar **{st.session_state.target_benar}x**. "
-        f"Salah = reset ke 0. Sesi berakhir kalau semua kata tuntas."
+        f"🎯 Target sesi: setiap kata harus benar "
+        f"**{st.session_state.target_benar}x**. "
+        f"Salah = reset ke 0."
     )
 
     col1, col2 = st.columns(2)
@@ -285,7 +291,7 @@ def render_menu():
 
 
 # =========================================================
-#  LOGIKA MULAI KUIS
+#  LOGIKA MULAI
 # =========================================================
 def mulai_kuis(mulai, selesai):
     data = st.session_state.data_kosakata
@@ -295,7 +301,6 @@ def mulai_kuis(mulai, selesai):
         st.error("Tidak ada kata dalam range tersebut!")
         return
 
-    # Buang duplikat
     unik = []
     sudah_ada = set()
     for k in kata_range:
@@ -340,15 +345,15 @@ def mulai_pemahaman(mulai, selesai):
 #  HALAMAN KUIS
 # =========================================================
 def render_kuis():
-    # Cek apakah semua kata sudah tuntas
     if st.session_state.sesi_aktif:
-        total_tuntas = sum(1 for v in st.session_state.sesi_progress.values()
-                           if v >= st.session_state.target_benar)
+        total_tuntas = sum(
+            1 for v in st.session_state.sesi_progress.values()
+            if v >= st.session_state.target_benar
+        )
         if total_tuntas >= len(st.session_state.sesi_kata_unik):
             selesaikan_sesi()
             return
 
-    # Header
     st.title("🎮 MODE KUIS 🎮")
     st.caption(
         f"📚 Nomor {st.session_state.range_mulai}-{st.session_state.range_selesai} "
@@ -357,7 +362,6 @@ def render_kuis():
         f"📄 {st.session_state.file_aktif}"
     )
 
-    # Progress bar
     total_benar = sum(st.session_state.sesi_progress.values())
     target = len(st.session_state.sesi_kata_unik) * st.session_state.target_benar
     persen = min(total_benar / target, 1.0) if target > 0 else 0
@@ -367,20 +371,20 @@ def render_kuis():
         f"📝 Benar: {total_benar}/{target} jawaban | "
         f"❌ Salah: {st.session_state.sesi_total_salah} | "
         f"🔁 Percobaan: {st.session_state.sesi_total_percobaan} | "
-        f"✅ Tuntas: {sum(1 for v in st.session_state.sesi_progress.values() if v >= st.session_state.target_benar)}"
+        f"✅ Tuntas: "
+        f"{sum(1 for v in st.session_state.sesi_progress.values() if v >= st.session_state.target_benar)}"
         f"/{len(st.session_state.sesi_kata_unik)} kata"
     )
 
-    # Mode kuis
     mode = st.radio(
         "Mode:",
         ["jepang_ke_indo", "indo_ke_jepang"],
-        format_func=lambda x: "🇯🇵 Jepang → Indonesia" if x == "jepang_ke_indo" else "🇮🇩 Indonesia → Jepang",
+        format_func=lambda x: "🇯🇵 Jepang → Indonesia" if x == "jepang_ke_indo"
+        else "🇮🇩 Indonesia → Jepang",
         horizontal=True,
         key="mode_kuis_radio"
     )
 
-    # Jika mode berubah, reset tampilan soal
     if mode != st.session_state.mode_kuis:
         st.session_state.mode_kuis = mode
         st.session_state.soal_sekarang = None
@@ -389,7 +393,6 @@ def render_kuis():
 
     st.divider()
 
-    # Jika belum ada soal, ambil dari antrian
     if st.session_state.soal_sekarang is None:
         if not st.session_state.antrian_soal:
             st.session_state.antrian_soal = list(st.session_state.sesi_kata_unik)
@@ -398,8 +401,6 @@ def render_kuis():
         st.session_state.sudah_dijawab = False
 
     soal = st.session_state.soal_sekarang
-
-    # Tampilkan soal
     huruf = soal.get("huruf", "")
 
     if st.session_state.mode_kuis == "jepang_ke_indo":
@@ -411,7 +412,6 @@ def render_kuis():
         st.markdown(f"### 🇮🇩 {soal['indo']}")
         st.caption("Apa bahasa Jepangnya? (romaji)")
 
-    # Feedback
     if st.session_state.pesan_feedback:
         if st.session_state.tipe_feedback == "benar":
             st.success(st.session_state.pesan_feedback)
@@ -420,12 +420,11 @@ def render_kuis():
         else:
             st.info(st.session_state.pesan_feedback)
 
-    # Tombol jawaban
     if not st.session_state.sudah_dijawab:
         buat_tombol_jawaban(soal)
     else:
-        # Tombol lanjut
-        if st.button("➡️ Lanjut ke Soal Berikutnya", type="primary", use_container_width=True):
+        if st.button("➡️ Lanjut ke Soal Berikutnya",
+                     type="primary", use_container_width=True):
             st.session_state.soal_sekarang = None
             st.session_state.sudah_dijawab = False
             st.session_state.pesan_feedback = None
@@ -439,7 +438,6 @@ def render_kuis():
 
 
 def buat_tombol_jawaban(soal):
-    """Membuat tombol-tombol pilihan jawaban."""
     mode = st.session_state.mode_kuis
     semua_kata = st.session_state.sesi_kata_unik
 
@@ -448,7 +446,6 @@ def buat_tombol_jawaban(soal):
     else:
         kunci_benar = soal["jepang"]
 
-    # Pisahkan item benar & pengecoh
     item_benar = None
     pengecoh = []
     for item in semua_kata:
@@ -463,7 +460,6 @@ def buat_tombol_jawaban(soal):
 
     random.shuffle(pengecoh)
 
-    # Buang duplikat teks
     teks_sudah_ada = set()
     teks_benar = " ".join(kunci_benar.lower().split())
     teks_sudah_ada.add(teks_benar)
@@ -481,16 +477,13 @@ def buat_tombol_jawaban(soal):
     pilihan_final = [item_benar] + pengecoh_unik[:jumlah_pengecoh]
     random.shuffle(pilihan_final)
 
-    # Tampilkan tombol dalam grid
     st.write("**🎮 Pilih Jawaban:**")
-
-    # Bagi menjadi beberapa baris
     n_cols = 3
     rows = [pilihan_final[i:i + n_cols] for i in range(0, len(pilihan_final), n_cols)]
 
-    for row in rows:
+    for row_idx, row in enumerate(rows):
         cols = st.columns(len(row))
-        for col, item in zip(cols, row):
+        for col_idx, item in zip(cols, row):
             with col:
                 if mode == "jepang_ke_indo":
                     label = item["indo"]
@@ -499,12 +492,12 @@ def buat_tombol_jawaban(soal):
                     if item.get("huruf"):
                         label += f" ({item['huruf']})"
 
-                if st.button(label, use_container_width=True, key=f"jwb_{label}_{random.random()}"):
+                unique_key = f"jwb_{row_idx}_{col_idx}_{label[:20]}"
+                if st.button(label, use_container_width=True, key=unique_key):
                     proses_jawaban(label, kunci_benar)
 
 
 def proses_jawaban(jawaban_dipilih, kunci_benar):
-    """Memproses jawaban yang dipilih."""
     soal = st.session_state.soal_sekarang
     norm = lambda s: " ".join(str(s).lower().split())
     benar = norm(jawaban_dipilih) == norm(kunci_benar)
@@ -521,7 +514,6 @@ def proses_jawaban(jawaban_dipilih, kunci_benar):
         st.session_state.sesi_progress[kunci_kata] = 0
         st.session_state.sesi_total_salah += 1
 
-    # Kata selalu masuk balik ke antrian
     st.session_state.antrian_soal.append(soal)
     st.session_state.sudah_dijawab = True
 
@@ -535,15 +527,16 @@ def proses_jawaban(jawaban_dipilih, kunci_benar):
         st.session_state.pesan_feedback = f"✅ Jawaban Benar!\n\n{pesan_benar}"
         st.session_state.tipe_feedback = "benar"
     else:
-        pesan_salah = f"Jawaban kamu: {jawaban_dipilih}\n\nJawaban benar: {kunci_benar}"
-        st.session_state.pesan_feedback = pesan_salah
+        st.session_state.pesan_feedback = (
+            f"Jawaban kamu: {jawaban_dipilih}\n\n"
+            f"Jawaban benar: {kunci_benar}"
+        )
         st.session_state.tipe_feedback = "salah"
 
     st.rerun()
 
 
 def selesaikan_sesi():
-    """Menampilkan skor akhir sesi."""
     st.session_state.sesi_aktif = False
 
     total_unik = len(st.session_state.sesi_kata_unik)
@@ -557,7 +550,9 @@ def selesaikan_sesi():
     skor = int((total_benar / target) * 100) if target > 0 else 0
     skor = min(skor, 100)
 
-    kualitas = int((st.session_state.sesi_total_benar_mentah / percobaan) * 100) if percobaan > 0 else 0
+    kualitas = int(
+        (st.session_state.sesi_total_benar_mentah / percobaan) * 100
+    ) if percobaan > 0 else 0
 
     if skor >= 100:
         status = "MAHIR! 🏆"
@@ -593,7 +588,8 @@ def selesaikan_sesi():
     else:
         st.warning(f"💡 Akurasi rendah. Coba ulangi sesi ini!")
 
-    if st.button("🚪 Kembali ke Menu Utama", type="primary", use_container_width=True):
+    if st.button("🚪 Kembali ke Menu Utama",
+                 type="primary", use_container_width=True):
         reset_sesi()
         st.session_state.halaman = "menu"
         st.rerun()
@@ -617,7 +613,6 @@ def render_pemahaman():
             st.rerun()
         return
 
-    # Tampilkan dalam grid
     n_cols = st.slider("Jumlah kolom:", min_value=1, max_value=5, value=3)
 
     rows = [data[i:i + n_cols] for i in range(0, len(data), n_cols)]
@@ -660,20 +655,23 @@ def reset_sesi():
 #  MAIN
 # =========================================================
 def main():
-    # Muat file aktif pertama kali
     if st.session_state.file_aktif is None:
         files = daftar_file_tersimpan()
         if files:
             st.session_state.file_aktif = files[0]
             st.session_state.data_kosakata = muat_data(files[0])
         else:
-            st.session_state.file_aktif = "default.json"
-            simpan_data("default.json", [])
-            st.session_state.data_kosakata = []
+            # Coba buat default.json
+            try:
+                simpan_data("default.json", [])
+                st.session_state.file_aktif = "default.json"
+                st.session_state.data_kosakata = []
+            except Exception:
+                st.session_state.file_aktif = "default.json"
+                st.session_state.data_kosakata = []
 
     render_sidebar()
 
-    # Routing halaman
     if st.session_state.halaman == "menu":
         render_menu()
     elif st.session_state.halaman == "kuis":
