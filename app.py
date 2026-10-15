@@ -13,70 +13,43 @@ st.set_page_config(
 )
 
 # =========================================================
-#  CSS KUSTOM — UNTUK POSISI TENGAH
+#  CSS KUSTOM — POSISI TENGAH & TOMBOL
 # =========================================================
 st.markdown("""
 <style>
-/* Container utama di tengah */
 .block-container {
-    max-width: 900px;
-    padding-left: 2rem;
-    padding-right: 2rem;
+    max-width: 1100px;
+    padding-left: 1rem;
+    padding-right: 1rem;
     margin-left: auto;
     margin-right: auto;
 }
-
-/* Semua teks default rata tengah */
-h1, h2, h3, h4, h5, h6 {
-    text-align: center !important;
-}
-
-/* Caption di tengah */
-[data-testid="stCaptionContainer"] {
-    text-align: center !important;
-}
-
-/* Progress bar & caption-nya di tengah */
-[data-testid="stProgress"] > div {
-    display: flex;
-    justify-content: center;
-}
-
-/* Radio button di tengah */
+h1, h2, h3, h4, h5, h6 { text-align: center !important; }
+[data-testid="stCaptionContainer"] { text-align: center !important; }
+[data-testid="stProgress"] > div { display: flex; justify-content: center; }
 [data-testid="stRadio"] > div {
     display: flex;
     justify-content: center;
     gap: 2rem;
 }
-[data-testid="stRadio"] > label {
-    text-align: center;
-    width: 100%;
-}
-
-/* Teks "Pilih Jawaban" di tengah */
-.stMarkdown p strong {
-    text-align: center;
-    display: block;
-}
-
-/* Tombol di tengah */
-.stButton > button {
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-/* Kotak feedback di tengah */
-[data-testid="stAlert"] {
-    text-align: center;
-}
-
-/* Metric di tengah */
+[data-testid="stRadio"] > label { text-align: center; width: 100%; }
+[data-testid="stAlert"] { text-align: center; }
 [data-testid="stMetricValue"], [data-testid="stMetricLabel"] {
     text-align: center;
 }
 
-/* Soal (markdown besar) di tengah */
+/* Tombol jawaban seragam */
+.stButton > button {
+    min-height: 65px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 0.95rem;
+    font-weight: bold;
+    line-height: 1.2;
+    padding: 8px 5px;
+}
+
+/* Soal di tengah */
 .soal-tengah {
     text-align: center;
     font-size: 2.2rem;
@@ -88,7 +61,6 @@ h1, h2, h3, h4, h5, h6 {
     border: 3px solid #FBC02D;
     margin: 1rem auto;
 }
-
 .huruf-tengah {
     text-align: center;
     font-size: 3rem;
@@ -97,19 +69,13 @@ h1, h2, h3, h4, h5, h6 {
     padding: 0.5rem;
     margin: 0.5rem auto;
 }
-
 .pertanyaan-tengah {
     text-align: center;
     font-style: italic;
     color: #555;
     margin: 0.5rem auto 1.5rem auto;
 }
-
-/* Dataframe di tengah */
-[data-testid="stDataFrame"] {
-    margin-left: auto;
-    margin-right: auto;
-}
+[data-testid="stDataFrame"] { margin-left: auto; margin-right: auto; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -449,13 +415,11 @@ def render_kuis():
             selesaikan_sesi()
             return
 
-    # Judul tengah
     st.markdown(
         "<h1 style='text-align:center; color:#C62828;'>🎮 MODE KUIS 🎮</h1>",
         unsafe_allow_html=True
     )
 
-    # Caption info tengah
     st.markdown(
         f"<p style='text-align:center; color:#FF6F00; font-weight:bold;'>"
         f"📚 Nomor {st.session_state.range_mulai}-{st.session_state.range_selesai} "
@@ -483,7 +447,6 @@ def render_kuis():
         unsafe_allow_html=True
     )
 
-    # Radio mode di tengah
     st.markdown(
         "<p style='text-align:center; font-weight:bold; margin-top:1rem;'>Mode:</p>",
         unsafe_allow_html=True
@@ -520,7 +483,6 @@ def render_kuis():
     soal = st.session_state.soal_sekarang
     huruf = soal.get("huruf", "")
 
-    # Soal di tengah
     if st.session_state.mode_kuis == "jepang_ke_indo":
         st.markdown(
             f"<div class='soal-tengah'>🇯🇵 {soal['jepang']}</div>",
@@ -545,7 +507,6 @@ def render_kuis():
             unsafe_allow_html=True
         )
 
-    # Feedback
     if st.session_state.pesan_feedback:
         if st.session_state.tipe_feedback == "benar":
             st.success(st.session_state.pesan_feedback)
@@ -554,7 +515,6 @@ def render_kuis():
         else:
             st.info(st.session_state.pesan_feedback)
 
-    # Tombol jawaban
     if not st.session_state.sudah_dijawab:
         buat_tombol_jawaban(soal)
     else:
@@ -578,6 +538,9 @@ def render_kuis():
             st.rerun()
 
 
+# =========================================================
+#  TOMBOL JAWABAN — GRID 5 KOLOM
+# =========================================================
 def buat_tombol_jawaban(soal):
     mode = st.session_state.mode_kuis
     semua_kata = st.session_state.sesi_kata_unik
@@ -627,23 +590,34 @@ def buat_tombol_jawaban(soal):
         unsafe_allow_html=True
     )
 
-    # Grid 2 kolom — di tengah
-    col_kiri, col_kanan = st.columns(2)
+    # =====================================================
+    # GRID 5 KOLOM KE SAMPING
+    # =====================================================
+    N_COLS = 5
+    rows = [pilihan_final[i:i + N_COLS]
+            for i in range(0, len(pilihan_final), N_COLS)]
 
-    for i, item in enumerate(pilihan_final):
-        if mode == "jepang_ke_indo":
-            label = item["indo"]
-        else:
-            label = item["jepang"]
-            if item.get("huruf"):
-                label += f" ({item['huruf']})"
+    for row_idx, row in enumerate(rows):
+        kolom = st.columns(N_COLS)
 
-        target_col = col_kiri if i % 2 == 0 else col_kanan
+        for col_idx in range(N_COLS):
+            with kolom[col_idx]:
+                if col_idx < len(row):
+                    item = row[col_idx]
 
-        with target_col:
-            if st.button(label, use_container_width=True,
-                         key=f"jwb_{i}"):
-                proses_jawaban(label, kunci_benar)
+                    if mode == "jepang_ke_indo":
+                        label = item["indo"]
+                        label_asli = item["indo"]
+                    else:
+                        label = item["jepang"]
+                        label_asli = item["jepang"]
+                        if item.get("huruf"):
+                            label += f"\n({item['huruf']})"
+
+                    unique_key = f"jwb_{row_idx}_{col_idx}"
+                    if st.button(label, use_container_width=True,
+                                 key=unique_key):
+                        proses_jawaban(label_asli, kunci_benar)
 
 
 def proses_jawaban(jawaban_dipilih, kunci_benar):
