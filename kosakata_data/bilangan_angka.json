@@ -1,0 +1,177 @@
+[
+  {
+    "indo": "satu",
+    "jepang": "ichi",
+    "huruf": "一"
+  },
+  {
+    "indo": "dua",
+    "jepang": "ni",
+    "huruf": "二"
+  },
+  {
+    "indo": "tiga",
+    "jepang": "san",
+    "huruf": "三"
+  },
+  {
+    "indo": "empat",
+    "jepang": "yon",
+    "huruf": "四"
+  },
+  {
+    "indo": "lima",
+    "jepang": "go",
+    "huruf": "五"
+  },
+  {
+    "indo": "enam",
+    "jepang": "roku",
+    "huruf": "六"
+  },
+  {
+    "indo": "tujuh",
+    "jepang": "nana",
+    "huruf": "七"
+  },
+  {
+    "indo": "delapan",
+    "jepang": "hachi",
+    "huruf": "八"
+  },
+  {
+    "indo": "sembilan",
+    "jepang": "kyuu",
+    "huruf": "九"
+  },
+  {
+    "indo": "sepuluh",
+    "jepang": "juu",
+    "huruf": "十"
+  },
+  {
+    "indo": "sebelas",
+    "jepang": "juuichi",
+    "huruf": "十一"
+  },
+  {
+    "indo": "dua belas",
+    "jepang": "juuni",
+    "huruf": "十二"
+  },
+  {
+    "indo": "tiga belas",
+    "jepang": "juusan",
+    "huruf": "十三"
+  },
+  {
+    "indo": "empat belas",
+    "jepang": "juuyon",
+    "huruf": "十四"
+  },
+  {
+    "indo": "lima belas",
+    "jepang": "juugo",
+    "huruf": "十五"
+  },
+  {
+    "indo": "enam belas",
+    "jepang": "juuroku",
+    "huruf": "十六"
+  },
+  {
+    "indo": "tujuh belas",
+    "jepang": "juunana",
+    "huruf": "十七"
+  },
+  {
+    "indo": "delapan belas",
+    "jepang": "juuhachi",
+    "huruf": "十八"
+  },
+  {
+    "indo": "sembilan belas",
+    "jepang": "juukyuu",
+    "huruf": "十九"
+  },
+  {
+    "indo": "dua puluh",
+    "jepang": "nijuu",
+    "huruf": "二十"
+  },
+  {
+    "indo": "tiga ratus",
+    "jepang": "sanbyaku",
+    "huruf": "三百"
+  },
+  {
+    "indo": "enam ratus",
+    "jepang": "roppyaku",
+    "huruf": "六百"
+  },
+  {
+    "indo": "delapan ratus",
+    "jepang": "happyaku",
+    "huruf": "八百"
+  },
+  {
+    "indo": "seribu",
+    "jepang": "sen",
+    "huruf": "千"
+  },
+  {
+    "indo": "seribu tiga ratus",
+    "jepang": "sen sanbyaku",
+    "huruf": "千三百"
+  },
+  {
+    "indo": "seribu enam ratus",
+    "jepang": "sen roppyaku",
+    "huruf": "千六百"
+  },
+  {
+    "indo": "seribu delapan ratus",
+    "jepang": "sen happyaku",
+    "huruf": "千八百"
+  },
+  {
+    "indo": "dua ribu",
+    "jepang": "nisen",
+    "huruf": "二千"
+  },
+  {
+    "indo": "tiga ribu",
+    "jepang": "sansen",
+    "huruf": "三千"
+  },
+  {
+    "indo": "delapan ribu",
+    "jepang": "hassen",
+    "huruf": "八千"
+  },
+  {
+    "indo": "sepuluh ribu",
+    "jepang": "ichiman",
+    "huruf": "一万"
+  },
+  {
+    "indo": "seratus ribu",
+    "jepang": "juuman",
+    "huruf": "十万"
+  },
+  {
+    "indo": "satu juta",
+    "jepang": "hyakuman",
+    "huruf": "百万"
+  },
+  {
+    "indo": "sepuluh juta",
+    "jepang": "issenman",
+    "huruf": "一千万"
+  },
+  {
+    "indo": "seratus juta",
+    "jepang": "ichioku",
+    "huruf": "一億"
+  }
+]
