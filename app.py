@@ -13,6 +13,107 @@ st.set_page_config(
 )
 
 # =========================================================
+#  CSS KUSTOM — UNTUK POSISI TENGAH
+# =========================================================
+st.markdown("""
+<style>
+/* Container utama di tengah */
+.block-container {
+    max-width: 900px;
+    padding-left: 2rem;
+    padding-right: 2rem;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Semua teks default rata tengah */
+h1, h2, h3, h4, h5, h6 {
+    text-align: center !important;
+}
+
+/* Caption di tengah */
+[data-testid="stCaptionContainer"] {
+    text-align: center !important;
+}
+
+/* Progress bar & caption-nya di tengah */
+[data-testid="stProgress"] > div {
+    display: flex;
+    justify-content: center;
+}
+
+/* Radio button di tengah */
+[data-testid="stRadio"] > div {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+}
+[data-testid="stRadio"] > label {
+    text-align: center;
+    width: 100%;
+}
+
+/* Teks "Pilih Jawaban" di tengah */
+.stMarkdown p strong {
+    text-align: center;
+    display: block;
+}
+
+/* Tombol di tengah */
+.stButton > button {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Kotak feedback di tengah */
+[data-testid="stAlert"] {
+    text-align: center;
+}
+
+/* Metric di tengah */
+[data-testid="stMetricValue"], [data-testid="stMetricLabel"] {
+    text-align: center;
+}
+
+/* Soal (markdown besar) di tengah */
+.soal-tengah {
+    text-align: center;
+    font-size: 2.2rem;
+    font-weight: bold;
+    color: #C62828;
+    padding: 1rem;
+    background: #FFF9C4;
+    border-radius: 10px;
+    border: 3px solid #FBC02D;
+    margin: 1rem auto;
+}
+
+.huruf-tengah {
+    text-align: center;
+    font-size: 3rem;
+    font-weight: bold;
+    color: #1565C0;
+    padding: 0.5rem;
+    margin: 0.5rem auto;
+}
+
+.pertanyaan-tengah {
+    text-align: center;
+    font-style: italic;
+    color: #555;
+    margin: 0.5rem auto 1.5rem auto;
+}
+
+/* Dataframe di tengah */
+[data-testid="stDataFrame"] {
+    margin-left: auto;
+    margin-right: auto;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# =========================================================
 #  KONFIGURASI FILE
 # =========================================================
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -224,7 +325,10 @@ def render_sidebar():
 #  HALAMAN MENU
 # =========================================================
 def render_menu():
-    st.title("🎌 Hafalan Bahasa Jepang - Bahasa Indonesia 🎌")
+    st.markdown(
+        "<h1 style='text-align:center;'>🎌 Hafalan Bahasa Jepang - Bahasa Indonesia 🎌</h1>",
+        unsafe_allow_html=True
+    )
     st.caption(f"📁 Folder data: `{FOLDER_DATA}`")
 
     data = st.session_state.data_kosakata
@@ -345,12 +449,21 @@ def render_kuis():
             selesaikan_sesi()
             return
 
-    st.title("🎮 MODE KUIS 🎮")
-    st.caption(
+    # Judul tengah
+    st.markdown(
+        "<h1 style='text-align:center; color:#C62828;'>🎮 MODE KUIS 🎮</h1>",
+        unsafe_allow_html=True
+    )
+
+    # Caption info tengah
+    st.markdown(
+        f"<p style='text-align:center; color:#FF6F00; font-weight:bold;'>"
         f"📚 Nomor {st.session_state.range_mulai}-{st.session_state.range_selesai} "
-        f"({len(st.session_state.sesi_kata_unik)} kata unik, target "
-        f"{st.session_state.target_benar}x) • "
+        f"({len(st.session_state.sesi_kata_unik)} kata unik, "
+        f"target {st.session_state.target_benar}x) • "
         f"📄 {st.session_state.file_aktif}"
+        f"</p>",
+        unsafe_allow_html=True
     )
 
     total_benar = sum(st.session_state.sesi_progress.values())
@@ -358,13 +471,22 @@ def render_kuis():
     persen = min(total_benar / target, 1.0) if target > 0 else 0
 
     st.progress(persen)
-    st.caption(
+    st.markdown(
+        f"<p style='text-align:center; color:#6A1B9A; font-weight:bold;'>"
         f"📝 Benar: {total_benar}/{target} jawaban | "
         f"❌ Salah: {st.session_state.sesi_total_salah} | "
         f"🔁 Percobaan: {st.session_state.sesi_total_percobaan} | "
         f"✅ Tuntas: "
         f"{sum(1 for v in st.session_state.sesi_progress.values() if v >= st.session_state.target_benar)}"
         f"/{len(st.session_state.sesi_kata_unik)} kata"
+        f"</p>",
+        unsafe_allow_html=True
+    )
+
+    # Radio mode di tengah
+    st.markdown(
+        "<p style='text-align:center; font-weight:bold; margin-top:1rem;'>Mode:</p>",
+        unsafe_allow_html=True
     )
 
     mode = st.radio(
@@ -373,7 +495,8 @@ def render_kuis():
         format_func=lambda x: "🇯🇵 Jepang → Indonesia"
         if x == "jepang_ke_indo" else "🇮🇩 Indonesia → Jepang",
         horizontal=True,
-        key="mode_kuis_radio"
+        key="mode_kuis_radio",
+        label_visibility="collapsed"
     )
 
     if mode != st.session_state.mode_kuis:
@@ -397,15 +520,32 @@ def render_kuis():
     soal = st.session_state.soal_sekarang
     huruf = soal.get("huruf", "")
 
+    # Soal di tengah
     if st.session_state.mode_kuis == "jepang_ke_indo":
-        st.markdown(f"### 🇯🇵 {soal['jepang']}")
+        st.markdown(
+            f"<div class='soal-tengah'>🇯🇵 {soal['jepang']}</div>",
+            unsafe_allow_html=True
+        )
         if huruf:
-            st.markdown(f"## {huruf}")
-        st.caption("Apa bahasa Indonesianya?")
+            st.markdown(
+                f"<div class='huruf-tengah'>{huruf}</div>",
+                unsafe_allow_html=True
+            )
+        st.markdown(
+            "<p class='pertanyaan-tengah'>Apa bahasa Indonesianya?</p>",
+            unsafe_allow_html=True
+        )
     else:
-        st.markdown(f"### 🇮🇩 {soal['indo']}")
-        st.caption("Apa bahasa Jepangnya? (romaji)")
+        st.markdown(
+            f"<div class='soal-tengah'>🇮🇩 {soal['indo']}</div>",
+            unsafe_allow_html=True
+        )
+        st.markdown(
+            "<p class='pertanyaan-tengah'>Apa bahasa Jepangnya? (romaji)</p>",
+            unsafe_allow_html=True
+        )
 
+    # Feedback
     if st.session_state.pesan_feedback:
         if st.session_state.tipe_feedback == "benar":
             st.success(st.session_state.pesan_feedback)
@@ -414,22 +554,28 @@ def render_kuis():
         else:
             st.info(st.session_state.pesan_feedback)
 
+    # Tombol jawaban
     if not st.session_state.sudah_dijawab:
         buat_tombol_jawaban(soal)
     else:
-        if st.button("➡️ Lanjut ke Soal Berikutnya",
-                     type="primary", use_container_width=True):
-            st.session_state.soal_sekarang = None
-            st.session_state.sudah_dijawab = False
-            st.session_state.pesan_feedback = None
-            st.session_state.pilihan_jawaban = []
-            st.rerun()
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            if st.button("➡️ Lanjut ke Soal Berikutnya",
+                         type="primary", use_container_width=True):
+                st.session_state.soal_sekarang = None
+                st.session_state.sudah_dijawab = False
+                st.session_state.pesan_feedback = None
+                st.session_state.pilihan_jawaban = []
+                st.rerun()
 
     st.divider()
-    if st.button("🚪 Keluar ke Menu Utama", use_container_width=True):
-        reset_sesi()
-        st.session_state.halaman = "menu"
-        st.rerun()
+
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("🚪 Keluar ke Menu Utama", use_container_width=True):
+            reset_sesi()
+            st.session_state.halaman = "menu"
+            st.rerun()
 
 
 def buat_tombol_jawaban(soal):
@@ -441,7 +587,6 @@ def buat_tombol_jawaban(soal):
     else:
         kunci_benar = soal["jepang"]
 
-    # Kalau pilihan sudah dibuat, pakai yang lama
     if not st.session_state.pilihan_jawaban:
         item_benar = None
         pengecoh = []
@@ -476,30 +621,29 @@ def buat_tombol_jawaban(soal):
 
     pilihan_final = st.session_state.pilihan_jawaban
 
-    st.write("**🎮 Pilih Jawaban:**")
+    st.markdown(
+        "<p style='text-align:center; font-weight:bold; font-size:1.1rem;'>"
+        "🎮 Pilih Jawaban:</p>",
+        unsafe_allow_html=True
+    )
 
-    # Buat tombol grid 3 kolom
-    n_cols = 3
-    rows = [pilihan_final[i:i + n_cols]
-            for i in range(0, len(pilihan_final), n_cols)]
+    # Grid 2 kolom — di tengah
+    col_kiri, col_kanan = st.columns(2)
 
-    for row_idx, row in enumerate(rows):
-        kolom = st.columns(len(row))
-        for col_idx in range(len(row)):
-            item = row[col_idx]
+    for i, item in enumerate(pilihan_final):
+        if mode == "jepang_ke_indo":
+            label = item["indo"]
+        else:
+            label = item["jepang"]
+            if item.get("huruf"):
+                label += f" ({item['huruf']})"
 
-            if mode == "jepang_ke_indo":
-                label = item["indo"]
-            else:
-                label = item["jepang"]
-                if item.get("huruf"):
-                    label += f" ({item['huruf']})"
+        target_col = col_kiri if i % 2 == 0 else col_kanan
 
-            unique_key = f"jwb_{row_idx}_{col_idx}"
-
-            with kolom[col_idx]:
-                if st.button(label, use_container_width=True, key=unique_key):
-                    proses_jawaban(label, kunci_benar)
+        with target_col:
+            if st.button(label, use_container_width=True,
+                         key=f"jwb_{i}"):
+                proses_jawaban(label, kunci_benar)
 
 
 def proses_jawaban(jawaban_dipilih, kunci_benar):
@@ -573,8 +717,14 @@ def selesaikan_sesi():
         status = "Belum Mahir ❌"
 
     st.balloons()
-    st.title("🎉 Sesi Kuis Selesai!")
-    st.markdown(f"## Skor: **{skor}/100** — {status}")
+    st.markdown(
+        "<h1 style='text-align:center;'>🎉 Sesi Kuis Selesai!</h1>",
+        unsafe_allow_html=True
+    )
+    st.markdown(
+        f"<h2 style='text-align:center;'>Skor: {skor}/100 — {status}</h2>",
+        unsafe_allow_html=True
+    )
 
     col1, col2 = st.columns(2)
     with col1:
@@ -595,21 +745,28 @@ def selesaikan_sesi():
     else:
         st.warning(f"💡 Akurasi rendah. Coba ulangi sesi ini!")
 
-    if st.button("🚪 Kembali ke Menu Utama",
-                 type="primary", use_container_width=True):
-        reset_sesi()
-        st.session_state.halaman = "menu"
-        st.rerun()
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("🚪 Kembali ke Menu Utama",
+                     type="primary", use_container_width=True):
+            reset_sesi()
+            st.session_state.halaman = "menu"
+            st.rerun()
 
 
 # =========================================================
 #  HALAMAN PEMAHAMAN
 # =========================================================
 def render_pemahaman():
-    st.title("📖 MODE PEMAHAMAN 📖")
-    st.caption(
+    st.markdown(
+        "<h1 style='text-align:center;'>📖 MODE PEMAHAMAN 📖</h1>",
+        unsafe_allow_html=True
+    )
+    st.markdown(
+        f"<p style='text-align:center; color:#FF6F00; font-weight:bold;'>"
         f"📚 Nomor {st.session_state.range_mulai}-{st.session_state.range_selesai} • "
-        f"📄 {st.session_state.file_aktif}"
+        f"📄 {st.session_state.file_aktif}</p>",
+        unsafe_allow_html=True
     )
 
     data = st.session_state.get("data_pemahaman", [])
@@ -636,9 +793,11 @@ def render_pemahaman():
                     st.markdown(f"🔵 {kos['indo']}")
 
     st.divider()
-    if st.button("🚪 Keluar ke Menu Utama", use_container_width=True):
-        st.session_state.halaman = "menu"
-        st.rerun()
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("🚪 Keluar ke Menu Utama", use_container_width=True):
+            st.session_state.halaman = "menu"
+            st.rerun()
 
 
 # =========================================================
